@@ -10,7 +10,6 @@ set -ouex pipefail
 # https://mirrors.rpmfusion.org/mirrorlist?path=free/fedora/updates/43/x86_64/repoview/index.html&protocol=https&redirect=1
 
 # 1. Repositories
-
 # --- CachyOS ---
 dnf5 -y copr enable bieszczaders/kernel-cachyos
 dnf5 -y copr enable bieszczaders/kernel-cachyos-addons
@@ -31,14 +30,11 @@ dnf5 remove -y \
     kernel-core \
     kernel-modules \
     kernel-modules-core \
-    kernel-modules-extra \
-    mesa-va-drivers
+    kernel-modules-extra 
 
 # 3. Installation
-
 # --- Packages ---
-# Added --allowerasing to resolve conflict between cachyos-settings and zram-generator-defaults
-dnf5 install -y --allowerasing \
+dnf5 install -y --allowerasing --skip-unavailable \
     kernel-cachyos \
     kernel-cachyos-devel-matched \
     cachyos-settings \
@@ -54,16 +50,12 @@ dnf5 install -y --allowerasing \
     lact \
     mullvad-vpn \
     virt-manager \
-    starship \
     zoxide \
-    eza \
     bat \
-    fzf \
     ripgrep \
     ugrep \
     fd-find \
     tealdeer \
-    fastfetch \
     atuin \
     byobu
 
@@ -72,7 +64,6 @@ systemctl enable ksmd.service scx.service libvirtd.service
 systemctl disable lactd.service coolercontrold.service mullvad-daemon.service tailscaled.service
 
 # 5. Config Files
-
 # AMD GPU Overclocking Unlock
 mkdir -p /usr/lib/modprobe.d
 echo "options amdgpu ppfeaturemask=0xffffffff" > /usr/lib/modprobe.d/amdgpu-overclock.conf
