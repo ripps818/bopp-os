@@ -19,6 +19,7 @@ dnf5 -y copr enable ilyaz/LACT
 dnf5 -y copr enable jackgreiner/lsfg-vk-git
 dnf5 -y copr enable codifryed/CoolerControl
 dnf5 -y copr enable brycensranch/gpu-screen-recorder-git
+dnf5 -y copr enable che/nerd-fonts
 
 # --- Mullvad ---
 curl -fsSL https://repository.mullvad.net/rpm/stable/mullvad.repo -o /etc/yum.repos.d/mullvad.repo
@@ -63,8 +64,7 @@ dnf5 install -y --allowerasing --skip-unavailable \
     mullvad-vpn \
     virt-manager \
     jetbrains-mono-fonts-all \
-    mozilla-fira-mono-fonts \
-    symbols-nerd-fonts \
+    nerd-fonts \
     zoxide \
     bat \
     ripgrep \
@@ -88,7 +88,7 @@ if [[ -n "$KERNEL_VERSION" ]]; then
 fi
 
 # 4. Services
-systemctl enable ksmd.service scx.service libvirtd.service
+systemctl enable scx.service libvirtd.service
 systemctl disable lactd.service coolercontrold.service mullvad-daemon.service tailscaled.service
 
 # 5. Config Files
@@ -97,10 +97,11 @@ mkdir -p /usr/lib/modprobe.d
 echo "options amdgpu ppfeaturemask=0xffffffff" > /usr/lib/modprobe.d/amdgpu-overclock.conf
 
 # AMD Nested Virtualization Unlock
-mkdir -p /etc/modprobe.d
-echo "options kvm_amd nested=1" > /etc/modprobe.d/kvm-nested.conf
+echo "options kvm_amd nested=1" > /usr/lib/modprobe.d/kvm-nested.conf
 
 # Optimized MPV Config
+# Note: mpv does not support reading config from /usr/lib or /usr/share,
+# so we must place this in /etc/mpv.
 mkdir -p /etc/mpv
 cat <<EOF > /etc/mpv/mpv.conf
 vo=gpu-next
