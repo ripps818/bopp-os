@@ -15,9 +15,9 @@ dnf5 -y copr enable bieszczaders/kernel-cachyos
 dnf5 -y copr enable bieszczaders/kernel-cachyos-addons
 
 # --- Tools ---
+dnf5 -y copr enable ilyaz/LACT
 dnf5 -y copr enable jackgreiner/lsfg-vk-git
 dnf5 -y copr enable codifryed/CoolerControl
-dnf5 -y copr enable ilyaz/LACT
 dnf5 -y copr enable brycensranch/gpu-screen-recorder-git
 
 # --- Mullvad ---
@@ -33,13 +33,23 @@ dnf5 remove -y \
     kernel-modules-extra 
 
 # 3. Installation
+
+# Workaround for kernel installation in container:
+# Mask kernel install hooks to prevent dracut failure during dnf transaction
+# because depmod hasn't run yet. We will run them manually later.
+mkdir -p /etc/kernel/install.d
+ln -s /dev/null /etc/kernel/install.d/05-rpmostree.install
+ln -s /dev/null /etc/kernel/install.d/50-dracut.install
+ln -s /dev/null /etc/kernel/install.d/90-loaderentry.install
+
 # --- Packages ---
 dnf5 install -y --allowerasing --skip-unavailable \
     kernel-cachyos \
     kernel-cachyos-devel-matched \
     cachyos-settings \
     cachyos-ksm-settings \
-    scxctl \
+    scx-scheds \
+    scx-tools \
     mpv \
     yt-dlp \
     lsfg-vk \
@@ -58,6 +68,19 @@ dnf5 install -y --allowerasing --skip-unavailable \
     tealdeer \
     atuin \
     byobu
+
+# Unmask hooks
+rm -f /etc/kernel/install.d/05-rpmostree.install
+rm -f /etc/kernel/install.d/50-dracut.install
+rm -f /etc/kernel/install.d/90-loaderentry.install
+
+# Manually trigger kernel setup
+KERNEL_VERSION=$(ls /usr/lib/modules | grep cachyos | sort -V | tail -n 1)
+if [[ -n "$KERNEL_VERSION" ]]; then
+    echo "Configuring kernel $KERNEL_VERSION"
+    depmod -a "$KERNEL_VERSION"
+    kernel-install add "$KERNEL_VERSION" "/usr/lib/modules/$KERNEL_VERSION/vmlinuz"
+fi
 
 # 4. Services
 systemctl enable ksmd.service scx.service libvirtd.service
