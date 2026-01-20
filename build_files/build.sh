@@ -19,6 +19,7 @@ dnf5 -y copr enable bieszczaders/kernel-cachyos-addons
 dnf5 -y copr enable jackgreiner/lsfg-vk-git
 dnf5 -y copr enable codifryed/CoolerControl
 dnf5 -y copr enable ilyaz/LACT
+dnf5 -y copr enable chey/gpu-screen-recorder
 
 # --- Mullvad ---
 curl -fsSL https://repository.mullvad.net/rpm/stable/mullvad.repo -o /etc/yum.repos.d/mullvad.repo
@@ -35,45 +36,31 @@ dnf5 remove -y \
 
 # 3. Installation
 
-# --- Release RPMs ---
-# Note: Bazzite usually has these, but ensuring they are present as per recipe.
-dnf5 install -y \
-    https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm \
-    https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm || true
-
 # --- Packages ---
-dnf5 install -y \
+# Added --allowerasing to resolve conflict between cachyos-settings and zram-generator-defaults
+dnf5 install -y --allowerasing \
     kernel-cachyos \
     kernel-cachyos-devel-matched \
     cachyos-settings \
     cachyos-ksm-settings \
-    scx-scheds \
-    scx-tools \
     scxctl \
-    mesa-va-drivers-freeworld \
-    mesa-vdpau-drivers-freeworld \
-    libavcodec-freeworld \
     mpv \
     yt-dlp \
-    libva-utils \
     lsfg-vk \
     goverlay \
     gpu-screen-recorder \
     openrgb \
     coolercontrol \
     lact \
-    tailscale \
     mullvad-vpn \
     virt-manager \
-    qemu-kvm \
-    libvirt \
-    edk2-ovmf \
     starship \
     zoxide \
     eza \
     bat \
     fzf \
     ripgrep \
+    ugrep \
     fd-find \
     tealdeer \
     fastfetch \
