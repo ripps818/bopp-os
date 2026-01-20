@@ -90,8 +90,24 @@ if [[ -n "$KERNEL_VERSION" ]]; then
     chmod 0600 "/usr/lib/modules/$KERNEL_VERSION/initramfs.img"
 fi
 
+## Enable KSMD
+tee "/usr/lib/systemd/system/ksmd.service" > /dev/null <<EOF
+[Unit]
+Description=Activates Kernel Samepage Merging
+ConditionPathExists=/sys/kernel/mm/ksm
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/bin/ksmctl -e
+ExecStop=/usr/bin/ksmctl -d
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
 # 4. Services
-systemctl enable libvirtd.service
+systemctl enable ksmd.service libvirtd.service
 systemctl disable lactd.service coolercontrold.service mullvad-daemon.service tailscaled.service
 
 # 5. Config Files
