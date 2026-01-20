@@ -30,7 +30,8 @@ dnf5 remove -y \
     kernel-core \
     kernel-modules \
     kernel-modules-core \
-    kernel-modules-extra 
+    kernel-modules-extra \
+    zram-generator-defaults
 
 # 3. Installation
 
@@ -55,11 +56,15 @@ dnf5 install -y --allowerasing --skip-unavailable \
     lsfg-vk \
     goverlay \
     gpu-screen-recorder-ui \
+    gpu-screen-recorder-gtk \
     openrgb \
     coolercontrol \
     lact \
     mullvad-vpn \
     virt-manager \
+    jetbrains-mono-fonts-all \
+    mozilla-fira-mono-fonts \
+    symbols-nerd-fonts \
     zoxide \
     bat \
     ripgrep \
@@ -79,7 +84,7 @@ KERNEL_VERSION=$(ls /usr/lib/modules | grep cachyos | sort -V | tail -n 1)
 if [[ -n "$KERNEL_VERSION" ]]; then
     echo "Configuring kernel $KERNEL_VERSION"
     depmod -a "$KERNEL_VERSION"
-    kernel-install add "$KERNEL_VERSION" "/usr/lib/modules/$KERNEL_VERSION/vmlinuz"
+    TMPDIR=/var/tmp kernel-install add "$KERNEL_VERSION" "/usr/lib/modules/$KERNEL_VERSION/vmlinuz"
 fi
 
 # 4. Services
@@ -105,3 +110,6 @@ profile=gpu-hq
 scale=ewa_lanczossharp
 cscale=ewa_lanczossharp
 EOF
+
+# Cleanup /var/tmp used by kernel-install workaround
+rm -rf /var/tmp/*
