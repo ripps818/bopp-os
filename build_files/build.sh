@@ -19,7 +19,7 @@ dnf5 -y copr enable bieszczaders/kernel-cachyos-addons
 dnf5 -y copr enable jackgreiner/lsfg-vk-git
 dnf5 -y copr enable codifryed/CoolerControl
 dnf5 -y copr enable ilyaz/LACT
-dnf5 -y copr enable chey/gpu-screen-recorder
+dnf5 -y copr enable brycensranch/gpu-screen-recorder-git
 
 # --- Mullvad ---
 curl -fsSL https://repository.mullvad.net/rpm/stable/mullvad.repo -o /etc/yum.repos.d/mullvad.repo
@@ -48,7 +48,7 @@ dnf5 install -y --allowerasing \
     yt-dlp \
     lsfg-vk \
     goverlay \
-    gpu-screen-recorder \
+    gpu-screen-recorder-ui \
     openrgb \
     coolercontrol \
     lact \
