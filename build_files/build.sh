@@ -84,11 +84,14 @@ KERNEL_VERSION=$(ls /usr/lib/modules | grep cachyos | sort -V | tail -n 1)
 if [[ -n "$KERNEL_VERSION" ]]; then
     echo "Configuring kernel $KERNEL_VERSION"
     depmod -a "$KERNEL_VERSION"
-    TMPDIR=/var/tmp kernel-install add "$KERNEL_VERSION" "/usr/lib/modules/$KERNEL_VERSION/vmlinuz"
+    # Generate initramfs directly using dracut to avoid kernel-install issues in container
+    # and ensure it includes the ostree module.
+    TMPDIR=/var/tmp dracut --no-hostonly --kver "$KERNEL_VERSION" --reproducible -v --add ostree -f "/usr/lib/modules/$KERNEL_VERSION/initramfs.img"
+    chmod 0600 "/usr/lib/modules/$KERNEL_VERSION/initramfs.img"
 fi
 
 # 4. Services
-systemctl enable scx.service libvirtd.service
+systemctl enable libvirtd.service
 systemctl disable lactd.service coolercontrold.service mullvad-daemon.service tailscaled.service
 
 # 5. Config Files
