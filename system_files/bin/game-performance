@@ -1,0 +1,124 @@
+#!/usr/bin/bash
+# Helper script to enable the performance gov with proton or others
+
+# Check for Bazzite specific tuned profile first
+USE_TUNED=false
+TUNED_PROFILE=""
+if command -v tuned-adm &>/dev/null; then
+    if tuned-adm list 2>/dev/null | grep -q "throughput-performance-bazzite"; then
+        USE_TUNED=true
+        TUNED_PROFILE="throughput-performance-bazzite"
+    fi
+fi
+
+# Handle manual start/stop
+if [[ "$1" == "--start" ]]; then
+    mkdir -p "/run/user/$(id -u)"
+    STATE_FILE="/run/user/$(id -u)/game-performance-state"
+
+    # 1. Try Bazzite Tuned
+    if [ "$USE_TUNED" = true ]; then
+        if grep -q "auto" /etc/tuned/profile_mode 2>/dev/null; then
+            echo "TUNED:auto" > "$STATE_FILE"
+        else
+            CURRENT=$(tuned-adm active 2>/dev/null | awk -F': ' '{print $2}')
+            echo "TUNED:$CURRENT" > "$STATE_FILE"
+        fi
+        tuned-adm profile "$TUNED_PROFILE"
+        exit 0
+    fi
+
+    # 2. Try PowerProfilesCtl
+    if command -v powerprofilesctl &>/dev/null; then
+        if powerprofilesctl list | grep -q 'performance:'; then
+            CURRENT=$(powerprofilesctl get)
+            echo "PPD:$CURRENT" > "$STATE_FILE"
+            powerprofilesctl set performance
+            exit 0
+        fi
+    fi
+
+    # 3. Fallback Tuned
+    if command -v tuned-adm &>/dev/null; then
+        if [ -z "$TUNED_PROFILE" ]; then TUNED_PROFILE="latency-performance"; fi
+        if grep -q "auto" /etc/tuned/profile_mode 2>/dev/null; then
+            echo "TUNED:auto" > "$STATE_FILE"
+        else
+            CURRENT=$(tuned-adm active 2>/dev/null | awk -F': ' '{print $2}')
+            echo "TUNED:$CURRENT" > "$STATE_FILE"
+        fi
+        tuned-adm profile "$TUNED_PROFILE"
+        exit 0
+    fi
+    exit 1
+elif [[ "$1" == "--stop" ]]; then
+    STATE_FILE="/run/user/$(id -u)/game-performance-state"
+    if [ -f "$STATE_FILE" ]; then
+        CONTENT=$(cat "$STATE_FILE")
+        TYPE=$(echo "$CONTENT" | cut -d':' -f1)
+        VAL=$(echo "$CONTENT" | cut -d':' -f2)
+        
+        if [ "$TYPE" == "TUNED" ]; then
+            if [ "$VAL" == "auto" ]; then
+                tuned-adm auto_profile
+            else
+                tuned-adm profile "$VAL"
+            fi
+        elif [ "$TYPE" == "PPD" ]; then
+            powerprofilesctl set "$VAL"
+        fi
+        rm -f "$STATE_FILE"
+    fi
+    # If no state file, we do nothing to avoid overriding user intent
+    exit 0
+fi
+
+# Try powerprofilesctl first (unless we found a specific tuned profile)
+if [ "$USE_TUNED" = false ] && command -v powerprofilesctl &>/dev/null; then
+    if powerprofilesctl list | grep -q 'performance:'; then
+        if [ -n "$GAME_PERFORMANCE_SCREENSAVER_ON" ]; then
+            exec powerprofilesctl launch -p performance \
+                -r "Launched with game-performance utility" -- "$@"
+        else
+            exec systemd-inhibit --why "Game performance is running" powerprofilesctl launch \
+                -p performance -r "Launched with game-performance utility" -- "$@"
+        fi
+    fi
+fi
+
+# Fallback to tuned-adm (common on Bazzite/Fedora) or use Bazzite profile
+if [ "$USE_TUNED" = true ] || command -v tuned-adm &>/dev/null; then
+    if [ -z "$TUNED_PROFILE" ]; then
+        TUNED_PROFILE="latency-performance"
+    fi
+
+    # Check if currently in auto mode
+    IS_AUTO=false
+    if grep -q "auto" /etc/tuned/profile_mode 2>/dev/null; then
+        IS_AUTO=true
+    fi
+
+    CURRENT_PROFILE=$(tuned-adm active 2>/dev/null | awk -F': ' '{print $2}')
+    if [[ -n "$CURRENT_PROFILE" ]] && [[ "$CURRENT_PROFILE" != *"$TUNED_PROFILE"* ]]; then
+        if tuned-adm profile "$TUNED_PROFILE" 2>/dev/null; then
+            if [ "$IS_AUTO" = "true" ]; then
+                trap "tuned-adm auto_profile" EXIT
+            else
+                trap "tuned-adm profile '$CURRENT_PROFILE'" EXIT
+            fi
+            if [ -z "$GAME_PERFORMANCE_SCREENSAVER_ON" ]; then
+                systemd-inhibit --why "Game performance is running" -- "$@"
+            else
+                "$@"
+            fi
+            exit $?
+        fi
+    fi
+fi
+
+# Fallback: just run the command
+if [ -n "$GAME_PERFORMANCE_SCREENSAVER_ON" ]; then
+    exec "$@"
+else
+    exec systemd-inhibit --why "Game performance is running" -- "$@"
+fi
