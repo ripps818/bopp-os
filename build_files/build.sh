@@ -52,16 +52,17 @@ ln -s /dev/null /etc/kernel/install.d/50-dracut.install
 ln -s /dev/null /etc/kernel/install.d/90-loaderentry.install
 
 # --- Packages ---
-# Install akmods first
-dnf5 install -y akmods
+# Install akmods and kernel first to ensure dependencies are met for akmod packages
+dnf5 install -y --allowerasing \
+    akmods \
+    kernel-cachyos \
+    kernel-cachyos-devel-matched
 
 # Download and install akmod packages without running their %post scriptlets
 # This avoids the "ERROR: Not to be used as root" failure during build.
 mkdir -p /var/tmp/akmods
-dnf5 install -y \
-    --downloadonly \
+dnf5 download -y \
     --destdir=/var/tmp/akmods \
-    --skip-unavailable \
     akmod-kvmfr \
     akmod-v4l2loopback \
     akmod-xpadneo \
@@ -74,8 +75,6 @@ fi
 rm -rf /var/tmp/akmods
 
 dnf5 install -y --allowerasing --skip-unavailable \
-    kernel-cachyos \
-    kernel-cachyos-devel-matched \
     cachyos-settings \
     cachyos-ksm-settings \
     scx-scheds \
