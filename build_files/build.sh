@@ -2,10 +2,15 @@
 
 set -ouex pipefail
 
+setsebool -P domain_kernel_load_modules on
+
 ### Install packages
 # --- CachyOS ---
 dnf5 -y copr enable bieszczaders/kernel-cachyos
 dnf5 -y copr enable bieszczaders/kernel-cachyos-addons
+
+# --- Kernel Modules ---
+dnf5 -y copr enable hikariknight/looking-glass-kvmfr
 
 # --- Tools ---
 dnf5 -y copr enable ilyaz/LACT
@@ -24,7 +29,9 @@ dnf5 remove -y \
     kernel-modules \
     kernel-modules-core \
     kernel-modules-extra \
-    zram-generator-defaults
+    zram-generator-defaults \
+    hhd-ui \
+    hhd
 
 # Installation
 
@@ -45,6 +52,11 @@ dnf5 install -y --allowerasing --skip-unavailable \
     scx-scheds \
     scx-tools \
     scx-manager \
+    akmod-v4l2loopback \
+    akmods-xpadneo \
+    akmod-xpad-noone \
+    akmods-kvmfr \
+    kvmfr \
     mpv \
     yt-dlp \
     lsfg-vk \
@@ -52,12 +64,15 @@ dnf5 install -y --allowerasing --skip-unavailable \
     goverlay \
     gpu-screen-recorder-ui \
     gpu-screen-recorder-gtk \
+    steam-devices \
+    inputplumber \
     openrgb \
     antimicrox \
     coolercontrol \
     lact \
     mullvad-vpn \
     virt-manager \
+    podman-compose \
     jetbrains-mono-fonts-all \
     nerd-fonts \
     zoxide \
@@ -74,6 +89,7 @@ install -Dm755 /ctx/system_files/bin/game-performance /usr/bin/game-performance
 install -Dm644 /ctx/system_files/lib/tuned/recommend.conf /usr/lib/tuned/recommend.d/70-bopp-os.conf
 install -Dm644 /ctx/system_files/lib/modprobe.d/amdgpu-overclock.conf /usr/lib/modprobe.d/amdgpu-overclock.conf
 install -Dm644 /ctx/system_files/lib/modprobe.d/kvm-nested.conf /usr/lib/modprobe.d/kvm-nested.conf
+install -Dm644 /ctx/system_files/lib/modules-load.d/boppos-modules.conf /usr/lib/modules-load.d/boppos-modules.conf
 install -Dm644 /ctx/system_files/lib/systemd/ksmd.service /usr/lib/systemd/system/ksmd.service
 install -Dm644 /ctx/system_files/etc/mpv.conf /etc/mpv/mpv.conf
 
@@ -94,7 +110,7 @@ if [[ -n "$KERNEL_VERSION" ]]; then
 fi
 
 # Services
-systemctl enable ksmd.service libvirtd.service scx_loader.service
+systemctl enable ksmd.service libvirtd.service scx_loader.service inputplumber.service openrgb.service
 systemctl disable lactd.service coolercontrold.service mullvad-daemon.service tailscaled.service
 
 # Cleanup /var/tmp used by kernel-install workaround

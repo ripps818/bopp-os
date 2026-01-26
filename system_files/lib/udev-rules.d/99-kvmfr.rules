@@ -1,0 +1,2 @@
+# Grant access to Looking Glass shared memory device
+SUBSYSTEM=="kvmfr", OWNER="root", GROUP="kvm", MODE="0660"
