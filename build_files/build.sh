@@ -53,7 +53,7 @@ dnf5 install -y --allowerasing --skip-unavailable \
     scx-tools \
     scx-manager \
     akmod-v4l2loopback \
-    akmods-xpadneo \
+    akmod-xpadneo \
     akmod-xpad-noone \
     akmods-kvmfr \
     kvmfr \
