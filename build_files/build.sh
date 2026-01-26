@@ -190,7 +190,7 @@ echo 'KERNEL=="kvmfr0", OWNER="root", GROUP="kvm", MODE="0660"' > /etc/udev/rule
 PKGS_SCHEDULERS="scx-scheds scx-tools scx-manager ananicy-cpp cachyos-ananicy-rules"
 PKGS_VIRT="kvmfr virt-manager podman-compose"
 PKGS_MEDIA="mpv yt-dlp lsfg-vk lsfg-vk-ui goverlay gpu-screen-recorder-ui gpu-screen-recorder-gtk"
-PKGS_GAMING="steam-devices inputplumber openrgb antimicrox"
+PKGS_GAMING="steam-devices inputplumber openrgb antimicrox scopebuddy mangohud vkbasalt"
 PKGS_HARDWARE="coolercontrol lact"
 PKGS_NET="mullvad-vpn cloudflare-warp"
 PKGS_FONTS="jetbrains-mono-fonts-all nerd-fonts"
