@@ -262,7 +262,7 @@ fi
 
 # 3. Deep Clean (Fixes 'sysusers' and 'var-tmpfiles' lint warnings)
 #    Remove build tools
-dnf5 remove -y gcc make rpm-build
+#dnf5 remove -y gcc make rpm-build
 dnf5 clean all
 
 #    Clear DNF caches and temp files
