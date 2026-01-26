@@ -63,8 +63,8 @@ dnf5 install -y --allowerasing \
 mkdir -p /var/tmp/akmods
 dnf5 download -y \
     --destdir=/var/tmp/akmods \
+    --skip-unavailable \
     akmod-kvmfr \
-    akmod-v4l2loopback \
     akmod-xpadneo \
     akmod-xpad-noone
 
