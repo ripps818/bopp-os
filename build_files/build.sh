@@ -52,10 +52,26 @@ ln -s /dev/null /etc/kernel/install.d/50-dracut.install
 ln -s /dev/null /etc/kernel/install.d/90-loaderentry.install
 
 # --- Packages ---
-# Install akmods first and mock it to prevent scriptlet failure in akmod-kvmfr
+# Install akmods first
 dnf5 install -y akmods
-mv /usr/sbin/akmods /usr/sbin/akmods.orig
-ln -s /bin/true /usr/sbin/akmods
+
+# Download and install akmod packages without running their %post scriptlets
+# This avoids the "ERROR: Not to be used as root" failure during build.
+mkdir -p /var/tmp/akmods
+dnf5 install -y \
+    --downloadonly \
+    --destdir=/var/tmp/akmods \
+    --skip-unavailable \
+    akmod-kvmfr \
+    akmod-v4l2loopback \
+    akmod-xpadneo \
+    akmod-xpad-noone
+
+if [ -n "$(ls -A /var/tmp/akmods/*.rpm 2>/dev/null)" ]; then
+    echo "Installing akmods with --nopost..."
+    rpm -Uvh --nopost --nodeps /var/tmp/akmods/*.rpm
+fi
+rm -rf /var/tmp/akmods
 
 dnf5 install -y --allowerasing --skip-unavailable \
     kernel-cachyos \
@@ -65,10 +81,6 @@ dnf5 install -y --allowerasing --skip-unavailable \
     scx-scheds \
     scx-tools \
     scx-manager \
-    akmod-v4l2loopback \
-    akmod-xpadneo \
-    akmod-xpad-noone \
-    akmod-kvmfr \
     kvmfr \
     mpv \
     yt-dlp \
@@ -97,10 +109,6 @@ dnf5 install -y --allowerasing --skip-unavailable \
     tealdeer \
     atuin \
     byobu
-
-# Restore akmods
-rm /usr/sbin/akmods
-mv /usr/sbin/akmods.orig /usr/sbin/akmods
 
 # Build and install kmods for the CachyOS kernel
 # This is necessary because akmods.service cannot easily install RPMs on an immutable system at runtime.
