@@ -13,12 +13,12 @@ dnf5 -y copr enable bieszczaders/kernel-cachyos-addons
 dnf5 -y copr enable hikariknight/looking-glass-kvmfr
 
 # --- Tools ---
+dnf5 -y copr enable shadowblip/InputPlumber
 dnf5 -y copr enable ilyaz/LACT
 dnf5 -y copr enable jackgreiner/lsfg-vk-git
 dnf5 -y copr enable codifryed/CoolerControl
 dnf5 -y copr enable brycensranch/gpu-screen-recorder-git
 dnf5 -y copr enable che/nerd-fonts
-dnf5 -y copr enable sentry/inputplumber
 
 # --- Mullvad ---
 curl -fsSL https://repository.mullvad.net/rpm/stable/mullvad.repo -o /etc/yum.repos.d/mullvad.repo
