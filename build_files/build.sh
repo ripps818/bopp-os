@@ -18,9 +18,17 @@ dnf5 -y copr enable jackgreiner/lsfg-vk-git
 dnf5 -y copr enable codifryed/CoolerControl
 dnf5 -y copr enable brycensranch/gpu-screen-recorder-git
 dnf5 -y copr enable che/nerd-fonts
+dnf5 -y copr enable sentry/inputplumber
 
 # --- Mullvad ---
 curl -fsSL https://repository.mullvad.net/rpm/stable/mullvad.repo -o /etc/yum.repos.d/mullvad.repo
+
+# --- Cloudflare Warp ---
+curl -fsSL https://pkg.cloudflareclient.com/cloudflare-warp-ascii.repo -o /etc/yum.repos.d/cloudflare-warp.repo
+
+# --- RPM Fusion (for akmod-v4l2loopback, akmod-xpadneo, etc.) ---
+dnf5 install -y https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm \
+    https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm
 
 # Removing stock kernel and drivers to replace with CachyOS
 dnf5 remove -y \
@@ -44,6 +52,11 @@ ln -s /dev/null /etc/kernel/install.d/50-dracut.install
 ln -s /dev/null /etc/kernel/install.d/90-loaderentry.install
 
 # --- Packages ---
+# Install akmods first and mock it to prevent scriptlet failure in akmod-kvmfr
+dnf5 install -y akmods
+mv /usr/sbin/akmods /usr/sbin/akmods.orig
+ln -s /bin/true /usr/sbin/akmods
+
 dnf5 install -y --allowerasing --skip-unavailable \
     kernel-cachyos \
     kernel-cachyos-devel-matched \
@@ -55,7 +68,7 @@ dnf5 install -y --allowerasing --skip-unavailable \
     akmod-v4l2loopback \
     akmod-xpadneo \
     akmod-xpad-noone \
-    akmods-kvmfr \
+    akmod-kvmfr \
     kvmfr \
     mpv \
     yt-dlp \
@@ -71,6 +84,7 @@ dnf5 install -y --allowerasing --skip-unavailable \
     coolercontrol \
     lact \
     mullvad-vpn \
+    cloudflare-warp \
     virt-manager \
     podman-compose \
     jetbrains-mono-fonts-all \
@@ -83,6 +97,33 @@ dnf5 install -y --allowerasing --skip-unavailable \
     tealdeer \
     atuin \
     byobu
+
+# Restore akmods
+rm /usr/sbin/akmods
+mv /usr/sbin/akmods.orig /usr/sbin/akmods
+
+# Build and install kmods for the CachyOS kernel
+# This is necessary because akmods.service cannot easily install RPMs on an immutable system at runtime.
+KERNEL_VERSION=$(ls /usr/lib/modules | grep cachyos | sort -V | tail -n 1)
+if [[ -n "$KERNEL_VERSION" ]]; then
+    echo "Building kmods for $KERNEL_VERSION"
+    
+    # Fix permissions for akmods user
+    chown -R akmods:akmods /var/cache/akmods
+    
+    # Build modules
+    su - akmods -s /bin/bash -c "/usr/sbin/akmods --force --kernels $KERNEL_VERSION"
+    
+    # Install generated RPMs
+    shopt -s nullglob
+    RPMS=(/var/cache/akmods/RPMS/*/*.rpm)
+    if [ ${#RPMS[@]} -gt 0 ]; then
+        dnf5 install -y "${RPMS[@]}"
+    else
+        echo "No kmod RPMs generated."
+    fi
+    shopt -u nullglob
+fi
 
 # Install custom scripts and config files
 install -Dm755 /ctx/system_files/bin/game-performance /usr/bin/game-performance
@@ -111,7 +152,9 @@ fi
 
 # Services
 systemctl enable ksmd.service libvirtd.service scx_loader.service inputplumber.service openrgb.service
-systemctl disable lactd.service coolercontrold.service mullvad-daemon.service tailscaled.service
+systemctl disable lactd.service coolercontrold.service mullvad-daemon.service tailscaled.service warp-svc.service
 
-# Cleanup /var/tmp used by kernel-install workaround
+# Cleanup
+dnf5 clean all
+rm -rf /var/cache/akmods
 rm -rf /var/tmp/*
